@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// ChunkIt split slice into slices of slice based on batch size!
+// ChunkIt split big slice into slices of slice based on batch size
 func ChunkIt(rows []interface{}, insertBatchSize int) [][]interface{} {
 	var result [][]interface{}
 
@@ -31,6 +31,7 @@ func ChunkIt(rows []interface{}, insertBatchSize int) [][]interface{} {
 	return result
 }
 
+// findBatchSize find maximum batch size for insert statement
 func findBatchSize(a int, limit int) int {
 	var result int
 

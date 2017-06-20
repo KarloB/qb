@@ -7,55 +7,15 @@ import (
 	"strings"
 )
 
-// QueryBuilder dynamic select query builder with table definition. Returns query and args
-func QueryBuilder(query string, definition []Definition) (string, []interface{}) {
-
-	var tableArgs []tableArg
-	var requestArgs []interface{}
-
-	for _, p := range definition {
-		res := isZero(p.Value)
-		if !res {
-
-			switch p.Value.(type) {
-			case string:
-				h, ok := p.Value.(string)
-				if ok {
-					if p.Operator == Like {
-						p.Value = fmt.Sprintf("%%%s%%", h)
-					}
-				}
-			}
-
-			requestArgs = append(requestArgs, p.Value)
-			tableArgs = append(tableArgs, tableArg{value: p.Column, operator: p.Operator.String()})
-		}
-	}
-
-	if len(tableArgs) > 0 {
-		buildArgs := []string{}
-		for i, ta := range tableArgs {
-			if i == 0 {
-				buildArgs = append(buildArgs, "where", ta.value, ta.operator)
-				continue
-			}
-			buildArgs = append(buildArgs, "and", ta.value, ta.operator)
-		}
-		query = fmt.Sprintf("%s %s", query, strings.Join(buildArgs, " "))
-	}
-
-	return query, requestArgs
-}
-
 // BulkInsert fast insert for large data set
 func BulkInsert(query string, rows []interface{}, db *sql.DB) error {
-	var err error
-	if len(rows) == 0 {
-		err = fmt.Errorf("No rows in request")
-		return err
-	}
 
-	fmt.Println("db", db)
+	if len(rows) == 0 {
+		return fmt.Errorf("No rows in request")
+	}
+	if db == nil {
+		return fmt.Errorf("Database connection is nil")
+	}
 
 	placeholder, fCount := createPlaceholder(rows[0])  // placeholder create placeholder based on structure. Count fields to determine ideal batch size
 	batchSize := len(rows)                             // initial size is length of recieved rows
@@ -76,11 +36,10 @@ func BulkInsert(query string, rows []interface{}, db *sql.DB) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
-// CreateStatement create insert statement for large data set
+// CreateStatement create insert statement for large data set. Can be used standalone to generate data or as part of BulkInsert function
 func CreateStatement(query string, rows []interface{}, placeholder string, count int) (string, []interface{}, error) {
 	var err error
 
@@ -104,4 +63,42 @@ func CreateStatement(query string, rows []interface{}, placeholder string, count
 	statement := fmt.Sprintf("%s VALUES %s", query, strings.Join(placeholders, ","))
 
 	return statement, args, err
+}
+
+// QueryBuilder dynamic select query builder with table definition. Returns query and args
+func QueryBuilder(query string, definition []Definition) (string, []interface{}) {
+
+	var tableArgs []tableArg
+	var requestArgs []interface{}
+
+	for _, p := range definition {
+		res := isZero(p.Value)
+		if !res {
+			switch p.Value.(type) {
+			case string:
+				h, ok := p.Value.(string)
+				if ok {
+					if p.Operator == Like {
+						p.Value = fmt.Sprintf("%%%s%%", h) // add % around entry
+					}
+				}
+			}
+			requestArgs = append(requestArgs, p.Value)
+			tableArgs = append(tableArgs, tableArg{value: p.Column, operator: p.Operator.String()})
+		}
+	}
+
+	if len(tableArgs) > 0 {
+		buildArgs := []string{}
+		for i, ta := range tableArgs {
+			if i == 0 {
+				buildArgs = append(buildArgs, "where", ta.value, ta.operator)
+				continue
+			}
+			buildArgs = append(buildArgs, "and", ta.value, ta.operator)
+		}
+		query = fmt.Sprintf("%s %s", query, strings.Join(buildArgs, " "))
+	}
+
+	return query, requestArgs
 }

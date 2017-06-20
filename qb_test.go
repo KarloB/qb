@@ -29,20 +29,35 @@ type TestStruct struct {
 	Other string
 }
 
+const query = "insert into test (col1, col2, col3)"
+
+// createRequest with large data set
+func createRequest(size int) []interface{} {
+	result := make([]interface{}, size)
+	for i := 0; i < size; i++ {
+		result[i] = TestStruct{Id: i, Name: "a", Other: "haha"}
+	}
+	return result
+}
+
 func TestBulkInsert(t *testing.T) {
 
-	var request []interface{}
-	query := "insert into test (col1, col2, col3)"
-
-	for i := 0; i < 25000; i++ {
-		request = append(request,
-			TestStruct{Id: i, Name: "a", Other: "haha"},
-		)
-	}
+	request := createRequest(500000) // create dummy request with large data set
 
 	err := BulkInsert(query, request, nil)
 	if err != nil {
 		panic(err)
 	}
+}
 
+func TestCreateStatement(t *testing.T) {
+
+	request := createRequest(50)
+
+	statement, args, err := CreateStatement(query, request, "", 0)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(statement)
+	fmt.Println(args)
 }
