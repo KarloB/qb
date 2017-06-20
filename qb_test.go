@@ -32,24 +32,17 @@ type TestStruct struct {
 func TestBulkInsert(t *testing.T) {
 
 	var request []interface{}
-	query := "insert into test (col1, col2, col3) values"
+	query := "insert into test (col1, col2, col3)"
 
-	request = append(request,
-		TestStruct{Id: 1, Name: "a", Other: "haha"},
-		TestStruct{Other: "Hehe"},
-		TestStruct{Id: 3, Name: "c", Other: "hihi"},
-		TestStruct{Id: 4, Other: "hoho"},
-		TestStruct{Id: 5, Name: "e", Other: "huhu"},
-		TestStruct{Id: 6, Name: "f", Other: "=U="},
-	)
+	for i := 0; i < 25000; i++ {
+		request = append(request,
+			TestStruct{Id: i, Name: "a", Other: "haha"},
+		)
+	}
 
-	q, args, err := BulkInsert(query, request)
+	err := BulkInsert(query, request, nil)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Query: ", q)
 
-	for i, a := range args {
-		fmt.Println(i+1, a)
-	}
 }

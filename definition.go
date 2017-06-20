@@ -42,3 +42,5 @@ type tableArg struct {
 	value    string
 	operator string
 }
+
+const mysqlMaxPlaceholders = 65536

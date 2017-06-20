@@ -1,6 +1,7 @@
 package qb
 
 import (
+	"database/sql"
 	"fmt"
 	"reflect"
 	"strings"
@@ -46,16 +47,46 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 	return query, requestArgs
 }
 
-// BulkInsert create insert statement
-func BulkInsert(query string, rows []interface{}) (string, []interface{}, error) {
+// BulkInsert fast insert for large data set
+func BulkInsert(query string, rows []interface{}, db *sql.DB) error {
 	var err error
-
 	if len(rows) == 0 {
 		err = fmt.Errorf("No rows in request")
-		return query, nil, err
+		return err
 	}
 
-	placeholder, count := createPlaceholder(rows[0])
+	fmt.Println("db", db)
+
+	placeholder, fCount := createPlaceholder(rows[0])  // placeholder create placeholder based on structure. Count fields to determine ideal batch size
+	batchSize := len(rows)                             // initial size is length of recieved rows
+	maxBatchSize := int(mysqlMaxPlaceholders / fCount) // max batch size can not have over 65536 placeholders. Limitation by MySQL
+	if batchSize > maxBatchSize {                      //if it does...
+		batchSize = findBatchSize(batchSize, maxBatchSize) // find largest possible batch size that doesn't exceed max number of placeholders
+	}
+
+	chunks := ChunkIt(rows, batchSize) // split dataset into chunks
+
+	for _, chunk := range chunks {
+		statement, args, err := CreateStatement(query, chunk, placeholder, fCount)
+		if err != nil {
+			panic(err)
+		}
+		_, err = db.Exec(statement, args...)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// CreateStatement create insert statement for large data set
+func CreateStatement(query string, rows []interface{}, placeholder string, count int) (string, []interface{}, error) {
+	var err error
+
+	if len(placeholder) == 0 && count == 0 {
+		placeholder, count = createPlaceholder(rows[0])
+	}
 
 	placeholders := make([]string, len(rows))
 	args := make([]interface{}, (len(rows) * count))
@@ -70,28 +101,7 @@ func BulkInsert(query string, rows []interface{}) (string, []interface{}, error)
 		}
 	}
 
-	statement := fmt.Sprintf("%s %s", query, strings.Join(placeholders, ","))
+	statement := fmt.Sprintf("%s VALUES %s", query, strings.Join(placeholders, ","))
 
 	return statement, args, err
-}
-
-// isZero check if interface equals zero value of its type
-func isZero(x interface{}) bool {
-	return x == reflect.Zero(reflect.TypeOf(x)).Interface()
-}
-
-// createPlaceholder create placeholder for one insert on structure
-func createPlaceholder(a interface{}) (string, int) {
-
-	instance := reflect.TypeOf(a)
-	fCount := instance.NumField()
-
-	var ph []string
-	for i := 1; i <= fCount; i++ {
-		ph = append(ph, "?")
-	}
-
-	placeholder := fmt.Sprintf("(%s)", strings.Join(ph, ","))
-
-	return placeholder, fCount
 }
