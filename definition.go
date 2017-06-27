@@ -1,5 +1,25 @@
 package qb
 
+const mysqlMaxPlaceholders = 65536
+
+type e int
+
+const (
+	requestEmpty e = iota + 1
+	insertError
+	statementError
+	databaseError
+	queryError
+)
+
+var errors = map[e]string{
+	requestEmpty:   "Request is empty",
+	insertError:    "Error inserting to database. %v",
+	statementError: "Error creating statement. %v",
+	databaseError:  "Error connecting to database",
+	queryError:     "Query template not provided",
+}
+
 // Definition define value, column name and statement type for table columns
 type Definition struct {
 	Value    interface{}
@@ -42,5 +62,3 @@ type tableArg struct {
 	value    string
 	operator string
 }
-
-const mysqlMaxPlaceholders = 65536

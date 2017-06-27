@@ -3,18 +3,14 @@ package qb
 import (
 	"database/sql"
 	"fmt"
-	"reflect"
 	"strings"
 )
 
 // BulkInsert fast insert for large data set
 func BulkInsert(query string, rows []interface{}, db *sql.DB) error {
-
-	if len(rows) == 0 {
-		return fmt.Errorf("No rows in request")
-	}
-	if db == nil {
-		return fmt.Errorf("Database connection is nil")
+	err := checkInsertRequest(query, rows, db)
+	if err != nil {
+		return err
 	}
 
 	placeholder, fCount := createPlaceholder(rows[0])  // placeholder create placeholder based on structure. Count fields to determine ideal batch size
@@ -26,43 +22,18 @@ func BulkInsert(query string, rows []interface{}, db *sql.DB) error {
 
 	chunks := ChunkIt(rows, batchSize) // split dataset into chunks
 
-	for _, chunk := range chunks {
+	for i, chunk := range chunks {
+		insertInfo(i)
 		statement, args, err := CreateStatement(query, chunk, placeholder, fCount)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf(errors[statementError], err)
 		}
 		_, err = db.Exec(statement, args...)
 		if err != nil {
-			return err
+			return fmt.Errorf(errors[insertError], err)
 		}
 	}
 	return nil
-}
-
-// CreateStatement create insert statement for large data set. Can be used standalone to generate data or as part of BulkInsert function
-func CreateStatement(query string, rows []interface{}, placeholder string, count int) (string, []interface{}, error) {
-	var err error
-
-	if len(placeholder) == 0 && count == 0 {
-		placeholder, count = createPlaceholder(rows[0])
-	}
-
-	placeholders := make([]string, len(rows))
-	args := make([]interface{}, (len(rows) * count))
-
-	var argCount int
-	for i, entry := range rows {
-		placeholders[i] = placeholder
-		v := reflect.ValueOf(entry)
-		for y := 0; y < v.NumField(); y++ {
-			args[argCount] = v.Field(y).Interface()
-			argCount++
-		}
-	}
-
-	statement := fmt.Sprintf("%s VALUES %s", query, strings.Join(placeholders, ","))
-
-	return statement, args, err
 }
 
 // QueryBuilder dynamic select query builder with table definition. Returns query and args
@@ -74,15 +45,17 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 	for _, p := range definition {
 		res := isZero(p.Value)
 		if !res {
+
 			switch p.Value.(type) {
 			case string:
 				h, ok := p.Value.(string)
 				if ok {
 					if p.Operator == Like {
-						p.Value = fmt.Sprintf("%%%s%%", h) // add % around entry
+						p.Value = fmt.Sprintf("%%%s%%", h)
 					}
 				}
 			}
+
 			requestArgs = append(requestArgs, p.Value)
 			tableArgs = append(tableArgs, tableArg{value: p.Column, operator: p.Operator.String()})
 		}

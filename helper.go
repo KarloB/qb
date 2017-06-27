@@ -1,12 +1,13 @@
 package qb
 
 import (
+	"database/sql"
 	"fmt"
 	"reflect"
 	"strings"
 )
 
-// ChunkIt split big slice into slices of slice based on batch size
+// ChunkIt split slice into slices of slice based on batch size
 func ChunkIt(rows []interface{}, insertBatchSize int) [][]interface{} {
 	var result [][]interface{}
 
@@ -31,7 +32,30 @@ func ChunkIt(rows []interface{}, insertBatchSize int) [][]interface{} {
 	return result
 }
 
-// findBatchSize find maximum batch size for insert statement
+// CreateStatement create insert statement for large data set
+func CreateStatement(query string, rows []interface{}, placeholder string, count int) (string, []interface{}, error) {
+	if len(placeholder) == 0 && count == 0 {
+		placeholder, count = createPlaceholder(rows[0])
+	}
+
+	placeholders := make([]string, len(rows))
+	args := make([]interface{}, (len(rows) * count))
+
+	var argCount int
+	for i, entry := range rows {
+		placeholders[i] = placeholder
+		v := reflect.ValueOf(entry)
+		for y := 0; y < v.NumField(); y++ {
+			args[argCount] = v.Field(y).Interface()
+			argCount++
+		}
+	}
+
+	statement := fmt.Sprintf("%s values %s", query, strings.Join(placeholders, ","))
+
+	return statement, args, nil
+}
+
 func findBatchSize(a int, limit int) int {
 	var result int
 
@@ -66,4 +90,22 @@ func createPlaceholder(a interface{}) (string, int) {
 	placeholder := fmt.Sprintf("(%s)", strings.Join(ph, ","))
 
 	return placeholder, fCount
+}
+
+func insertInfo(i int) {
+	fmt.Printf("Inserting batch %d\n", i+1)
+}
+
+func checkInsertRequest(query string, rows []interface{}, db *sql.DB) error {
+	if len(rows) == 0 {
+		return fmt.Errorf(errors[requestEmpty])
+	}
+	if len(query) == 0 {
+		return fmt.Errorf(errors[queryError])
+	}
+	if db == nil {
+		return fmt.Errorf(errors[databaseError])
+	}
+
+	return nil
 }
