@@ -109,3 +109,39 @@ func checkInsertRequest(query string, rows []interface{}, db *sql.DB) error {
 
 	return nil
 }
+
+// cleanSlice remove empty strings from string slice
+func cleanSlice(a []string) []string {
+	var result []string
+	for _, b := range a {
+		if len(strings.Replace(b, " ", "", -1)) == 0 {
+			continue
+		}
+		result = append(result, b)
+	}
+	return result
+}
+
+// buildOperator "in"" operator can have multiple argumens as value
+func buildOperator(operator Operator, counter int) string {
+	op := operator.String()
+
+	if operator == In && counter > 1 {
+		var newOperator []string
+		for i := 1; i <= counter; i++ {
+			newOperator = append(newOperator, "?")
+		}
+		op = fmt.Sprintf("in (%s)", strings.Join(newOperator, ","))
+	}
+
+	if operator == Like && counter > 1 {
+		var ors []string
+		for i := 0; i < counter; i++ {
+			ors[i] = "(?)"
+		}
+		newOperator := "like " + strings.Join(ors, " or ")
+		op = newOperator
+	}
+
+	return op
+}

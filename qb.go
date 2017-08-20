@@ -43,6 +43,7 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 	var requestArgs []interface{}
 
 	for _, p := range definition {
+		var counter int
 		res := isZero(p.Value)
 		if !res {
 
@@ -56,8 +57,38 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 				}
 			}
 
-			requestArgs = append(requestArgs, p.Value)
-			tableArgs = append(tableArgs, tableArg{value: p.Column, operator: p.Operator.String()})
+			switch p.Operator {
+			case In:
+				h, ok := p.Value.(string)
+				if ok {
+					values := strings.Split(h, " ")
+					values = cleanSlice(values)
+					counter = len(values)
+					for _, v := range values {
+						requestArgs = append(requestArgs, v)
+					}
+				}
+			case Like:
+				h, ok := p.Value.(string)
+				if ok {
+					if p.Operator == Like {
+						values := strings.Split(h, " ")
+						values = cleanSlice(values)
+						counter = len(values)
+						for _, v := range values {
+							v = fmt.Sprintf("%%%s%%", v)
+							requestArgs = append(requestArgs, v)
+						}
+					}
+				}
+
+			default:
+				requestArgs = append(requestArgs, p.Value)
+			}
+
+			op := buildOperator(p.Operator, counter)
+
+			tableArgs = append(tableArgs, tableArg{value: p.Column, operator: op})
 		}
 	}
 
