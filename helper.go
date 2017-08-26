@@ -55,13 +55,21 @@ func CreateStatement(query string, rows []interface{}, placeholder string, count
 		}
 	}
 
-	var values string
-	if !strings.Contains(query, "values") {
-		values = "values"
-	}
-	statement := fmt.Sprintf("%s %s %s", query, values, strings.Join(placeholders, ","))
+	query = queryValues(query)
+	statement := fmt.Sprintf("%s %s", query, strings.Join(placeholders, ","))
 
 	return statement, args, nil
+}
+
+func queryValues(query string) string {
+	query = strings.ToLower(query)
+	valuesIndex := strings.Index(query, "values")
+	if valuesIndex != 0 {
+		query = query[:valuesIndex] // delete placeholders if any exist
+	}
+
+	query = fmt.Sprintf("%s values", query)
+	return query
 }
 
 func findBatchSize(a int, limit int) int {
