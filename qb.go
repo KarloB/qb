@@ -1,13 +1,14 @@
 package qb
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
 )
 
 // BulkInsert fast insert for large data set
-func BulkInsert(query string, rows []interface{}, db *sql.DB) error {
+func BulkInsert(ctx context.Context, query string, rows []interface{}, db *sql.DB) error {
 	err := checkInsertRequest(query, rows, db)
 	if err != nil {
 		return err
@@ -26,11 +27,11 @@ func BulkInsert(query string, rows []interface{}, db *sql.DB) error {
 	chunks := ChunkIt(rows, batchSize) // split dataset into chunks
 
 	for i, chunk := range chunks {
-		insertInfo(i)
 		statement, args, err := CreateStatement(query, chunk, placeholder, fCount)
 		if err != nil {
 			return fmt.Errorf(errors[statementError], err)
 		}
+		insertInfo(ctx, i)
 		_, err = db.Exec(statement, args...)
 		if err != nil {
 			return fmt.Errorf(errors[insertError], err)

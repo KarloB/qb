@@ -1,8 +1,10 @@
 package qb
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 )
@@ -122,8 +124,15 @@ func extractQueryColumns(query string) []string {
 	return columns
 }
 
-func insertInfo(i int) {
-	fmt.Printf("Inserting batch %d\n", i+1)
+func insertInfo(ctx context.Context, i int) {
+	switch i {
+	case 0:
+		log.Printf("%v Nothing to do", ctx.Value("key"))
+	case 1:
+		log.Printf("%v Bulk insert", ctx.Value("key"))
+	default:
+		log.Printf("%v Insert batch %d", ctx.Value("key"), i)
+	}
 }
 
 func checkInsertRequest(query string, rows []interface{}, db *sql.DB) error {

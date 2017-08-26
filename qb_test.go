@@ -1,6 +1,7 @@
 package qb
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -44,7 +45,9 @@ func TestBulkInsert(t *testing.T) {
 
 	request := createRequest(500000) // create dummy request with large data set
 
-	err := BulkInsert(query, request, nil)
+	ctx := context.WithValue(context.Background(), "grah", "kupus")
+
+	err := BulkInsert(ctx, query, request, nil)
 	if err != nil {
 		panic(err)
 	}
