@@ -55,7 +55,11 @@ func CreateStatement(query string, rows []interface{}, placeholder string, count
 		}
 	}
 
-	statement := fmt.Sprintf("%s values %s", query, strings.Join(placeholders, ","))
+	var values string
+	if !strings.Contains(query, "values") {
+		values = "values"
+	}
+	statement := fmt.Sprintf("%s %s %s", query, values, strings.Join(placeholders, ","))
 
 	return statement, args, nil
 }
