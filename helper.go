@@ -64,7 +64,7 @@ func CreateStatement(query string, rows []interface{}, placeholder string, count
 func queryValues(query string) string {
 	query = strings.ToLower(query)
 	valuesIndex := strings.Index(query, "values")
-	if valuesIndex != 0 {
+	if valuesIndex > 0 {
 		query = query[:valuesIndex] // delete placeholders if any exist
 	}
 
