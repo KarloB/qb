@@ -34,8 +34,12 @@ func ChunkIt(rows []interface{}, insertBatchSize int) [][]interface{} {
 
 // CreateStatement create insert statement for large data set
 func CreateStatement(query string, rows []interface{}, placeholder string, count int) (string, []interface{}, error) {
+	var err error
 	if len(placeholder) == 0 && count == 0 {
-		placeholder, count = createPlaceholder(rows[0])
+		placeholder, count, err = createPlaceholder(query, rows[0])
+		if err != nil {
+			return "", nil, err
+		}
 	}
 
 	placeholders := make([]string, len(rows))
@@ -77,10 +81,15 @@ func isZero(x interface{}) bool {
 }
 
 // createPlaceholder create placeholder for one insert on structure
-func createPlaceholder(a interface{}) (string, int) {
+func createPlaceholder(query string, a interface{}) (string, int, error) {
 
 	instance := reflect.TypeOf(a)
 	fCount := instance.NumField()
+
+	columns := extractQueryColumns(query)
+	if len(columns) != fCount {
+		return "", 0, fmt.Errorf("Structure type doesn't match column count")
+	}
 
 	ph := make([]string, fCount)
 	for i := 0; i < fCount; i++ {
@@ -89,7 +98,16 @@ func createPlaceholder(a interface{}) (string, int) {
 
 	placeholder := fmt.Sprintf("(%s)", strings.Join(ph, ","))
 
-	return placeholder, fCount
+	return placeholder, fCount, nil
+}
+
+func extractQueryColumns(query string) []string {
+	columnsStart := strings.Index(query, "(")
+	columnsEnd := strings.Index(query, ")")
+	columnsString := query[columnsStart+1 : columnsEnd]
+	columnsString = strings.Replace(columnsString, " ", "", -1)
+	columns := strings.Split(columnsString, ",")
+	return columns
 }
 
 func insertInfo(i int) {

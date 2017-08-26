@@ -13,7 +13,10 @@ func BulkInsert(query string, rows []interface{}, db *sql.DB) error {
 		return err
 	}
 
-	placeholder, fCount := createPlaceholder(rows[0])  // placeholder create placeholder based on structure. Count fields to determine ideal batch size
+	placeholder, fCount, err := createPlaceholder(query, rows[0]) // placeholder create placeholder based on structure. Count fields to determine ideal batch size
+	if err != nil {
+		return err
+	}
 	batchSize := len(rows)                             // initial size is length of recieved rows
 	maxBatchSize := int(mysqlMaxPlaceholders / fCount) // max batch size can not have over 65536 placeholders. Limitation by MySQL
 	if batchSize > maxBatchSize {                      //if it does...
