@@ -31,7 +31,7 @@ func BulkInsert(ctx context.Context, query string, rows []interface{}, db *sql.D
 		if err != nil {
 			return fmt.Errorf(errors[statementError], err)
 		}
-		insertInfo(ctx, i)
+		insertInfo(ctx, i, len(chunk))
 		_, err = db.Exec(statement, args...)
 		if err != nil {
 			return fmt.Errorf(errors[insertError], err)

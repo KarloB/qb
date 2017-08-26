@@ -124,14 +124,12 @@ func extractQueryColumns(query string) []string {
 	return columns
 }
 
-func insertInfo(ctx context.Context, i int) {
+func insertInfo(ctx context.Context, i, chunk int) {
 	switch i {
 	case 0:
-		log.Printf("%v Nothing to do", ctx.Value("key"))
-	case 1:
-		log.Printf("%v Bulk insert", ctx.Value("key"))
+		log.Printf("[BulkInsert] %v Inserting %d entries", ctx.Value(""), chunk)
 	default:
-		log.Printf("%v Insert batch %d", ctx.Value("key"), i)
+		log.Printf("[BulkInsert] %v Insert batch %d. Entries: %d", ctx.Value(""), i, chunk)
 	}
 }
 
