@@ -91,6 +91,28 @@ func findBatchSize(a int, limit int) int {
 
 // isZero check if interface equals zero value of its type
 func isZero(x interface{}) bool {
+	switch x.(type) {
+	case []string:
+		h, ok := x.([]string)
+		if ok {
+			if h == nil {
+				return true
+			}
+			if len(h) == 0 {
+				return true
+			}
+		}
+	case []int:
+		h, ok := x.([]int)
+		if ok {
+			if h == nil {
+				return true
+			}
+			if len(h) == 0 {
+				return true
+			}
+		}
+	}
 	return x == reflect.Zero(reflect.TypeOf(x)).Interface()
 }
 
