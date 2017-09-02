@@ -42,11 +42,10 @@ func BulkInsert(ctx context.Context, query string, rows []interface{}, db *sql.D
 
 // QueryBuilder dynamic select query builder with table definition. Returns query and args
 func QueryBuilder(query string, definition []Definition) (string, []interface{}) {
-
-	fmt.Printf("definition \n %+v", definition)
-
 	var tableArgs []tableArg
 	var requestArgs []interface{}
+
+	query = cleanQueryString(query)
 
 	for _, p := range definition {
 		var counter int

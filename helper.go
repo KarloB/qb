@@ -207,3 +207,14 @@ func buildOperator(operator Operator, counter int) string {
 
 	return op
 }
+
+func cleanQueryString(query string) string {
+	query = strings.ToLower(query)
+	index := strings.Index(query, " where ")
+	if index < 0 {
+		return query
+	}
+
+	query = query[0:index]
+	return query
+}
