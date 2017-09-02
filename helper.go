@@ -91,6 +91,7 @@ func findBatchSize(a int, limit int) int {
 
 // isZero check if interface equals zero value of its type
 func isZero(x interface{}) bool {
+	var result bool
 	switch x.(type) {
 	case []string:
 		h, ok := x.([]string)
@@ -112,8 +113,10 @@ func isZero(x interface{}) bool {
 				return true
 			}
 		}
+	default:
+		result = (x == reflect.Zero(reflect.TypeOf(x)).Interface())
 	}
-	return x == reflect.Zero(reflect.TypeOf(x)).Interface()
+	return result
 }
 
 // createPlaceholder create placeholder for one insert on structure
