@@ -231,30 +231,18 @@ func removeDoubleSpace(a string) string {
 
 func cleanQueryString(query string) string {
 	query = strings.ToLower(query)
-
-	// count := strings.Count(query, "where ")
-	// switch count {
-	// case 1:
-	// 	index := strings.Index(query, "where ")
-	// 	if index < 0 {
-	// 		return query
-	// 	}
-	// 	query = query[0:index]
-	// case 0:
-	// default:
 	queryPieces := strings.Split(query, "where ")
-	queryPieces = cleanSlice(queryPieces) // delete last empty one
+	queryPieces = cleanSlice(queryPieces) // delete last empty one, if exists
 	newPieces := []string{}
 	for _, w := range queryPieces {
-		if !strings.Contains(w, "?") {
-			newPieces = append(newPieces, w)
+		if !strings.Contains(w, "?") { // if it contains placeholder, it is conditional query peice and we don't want those kind around
+			newPieces = append(newPieces, w) // all other query pieces are welcome to join
 		}
 	}
 
 	var newQuery string
-	newQuery = strings.Join(newPieces, "where ")
+	newQuery = strings.Join(newPieces, "where ") // rebuild query string without unwanted wheres again
 	query = newQuery
-	// }
 
 	return query
 }

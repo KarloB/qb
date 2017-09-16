@@ -11,7 +11,8 @@ func TestQueryBuilder(t *testing.T) {
 	query := "select u.id, u.name, u.email, u.registered, u.active_from from user u join photo p on (a+b where id in select a + b where c = 4) where id = ?"
 
 	request := []Definition{
-		{[]string{"John", "Milkovocih"}, "u.name", Or},
+		{[]string{"John", "Milkovocih", "Pimpek"}, "u.name", Or},
+		{[]int{1, 2, 3}, "u.id", In},
 	}
 
 	result, args := QueryBuilder(query, request)

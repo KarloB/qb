@@ -64,23 +64,35 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 
 			switch p.Operator {
 			case In:
-				h, ok := p.Value.(string)
-				if ok {
-					values := strings.Split(h, " ")
-					values = cleanSlice(values)
-					counter = len(values)
-					for _, v := range values {
-						requestArgs = append(requestArgs, v)
+				switch p.Value.(type) {
+				case string:
+					h, ok := p.Value.(string)
+					if ok {
+						values := strings.Split(h, " ")
+						values = cleanSlice(values)
+						counter = len(values)
+						for _, v := range values {
+							requestArgs = append(requestArgs, v)
+						}
+					}
+				case []string:
+					hs, ok := p.Value.([]string)
+					if ok {
+						counter = len(hs)
+						for i := range hs {
+							requestArgs = append(requestArgs, hs[i])
+						}
+					}
+				case []int:
+					hs, ok := p.Value.([]int)
+					if ok {
+						counter = len(hs)
+						for i := range hs {
+							requestArgs = append(requestArgs, hs[i])
+						}
 					}
 				}
 
-				hs, ok := p.Value.([]string)
-				if ok {
-					counter = len(hs)
-					for i := range hs {
-						requestArgs = append(requestArgs, hs[i])
-					}
-				}
 			case Like:
 				h, ok := p.Value.(string)
 				if ok {
