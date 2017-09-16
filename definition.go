@@ -38,6 +38,7 @@ const (
 	Greater
 	Lesser
 	In
+	Or
 )
 
 func (t Operator) String() string {
@@ -56,6 +57,8 @@ func (t Operator) String() string {
 		return "<= ?"
 	case In:
 		return "in (?)"
+	case Or:
+		return ""
 	default:
 		return "= ?"
 	}

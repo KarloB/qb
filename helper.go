@@ -205,6 +205,15 @@ func buildOperator(operator Operator, counter int) string {
 		op = newOperator
 	}
 
+	if operator == Or {
+		var ors []string
+		for i := 0; i < counter; i++ {
+			ors[i] = "(?)"
+		}
+		newOperator := "= " + strings.Join(ors, " or ")
+		op = newOperator
+	}
+
 	return op
 }
 
