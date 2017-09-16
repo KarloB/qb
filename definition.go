@@ -38,6 +38,7 @@ const (
 	Greater
 	Lesser
 	In
+	// Or operator for slice of string or slice of int
 	Or
 )
 

@@ -185,45 +185,76 @@ func cleanSlice(a []string) []string {
 }
 
 // buildOperator "in"" operator can have multiple argumens as value
-func buildOperator(operator Operator, counter int) string {
-	op := operator.String()
-
-	if operator == In && counter > 1 {
+func buildOperator(column string, operator Operator, counter int) (string, string) {
+	var op string
+	switch operator {
+	default:
+		op = operator.String()
+	case In:
 		var newOperator []string
 		for i := 1; i <= counter; i++ {
 			newOperator = append(newOperator, "?")
 		}
 		op = fmt.Sprintf("in (%s)", strings.Join(newOperator, ","))
-	}
-
-	if operator == Like && counter > 1 {
-		var ors []string
-		for i := 0; i < counter; i++ {
-			ors[i] = "(?)"
+	case Like:
+		if counter > 1 {
+			var ors []string
+			for i := 0; i < counter; i++ {
+				ors[i] = "(?)"
+			}
+			newOperator := "like " + strings.Join(ors, " or ")
+			op = newOperator
 		}
-		newOperator := "like " + strings.Join(ors, " or ")
-		op = newOperator
-	}
 
-	if operator == Or {
-		var ors []string
-		for i := 0; i < counter; i++ {
-			ors[i] = "(?)"
+	case Or:
+		if counter == 1 {
+			return column, "= ?"
 		}
-		newOperator := "= " + strings.Join(ors, " or ")
-		op = newOperator
+		if counter > 1 {
+
+			var ors []string
+			for i := 0; i < counter; i++ {
+				ors = append(ors, fmt.Sprintf("%s = ?", column))
+			}
+			newOperator := fmt.Sprintf("(%s)", strings.Join(ors, " or "))
+			op = newOperator
+			column = ""
+		}
 	}
 
-	return op
+	return column, op
+}
+
+func removeDoubleSpace(a string) string {
+	return strings.Replace(a, "  ", " ", -1)
 }
 
 func cleanQueryString(query string) string {
 	query = strings.ToLower(query)
-	index := strings.Index(query, " where ")
-	if index < 0 {
-		return query
+
+	// count := strings.Count(query, "where ")
+	// switch count {
+	// case 1:
+	// 	index := strings.Index(query, "where ")
+	// 	if index < 0 {
+	// 		return query
+	// 	}
+	// 	query = query[0:index]
+	// case 0:
+	// default:
+	queryPieces := strings.Split(query, "where ")
+	queryPieces = cleanSlice(queryPieces) // delete last empty one
+	newPieces := []string{}
+	for _, w := range queryPieces {
+		if !strings.Contains(w, "?") {
+			newPieces = append(newPieces, w)
+		}
 	}
 
-	query = query[0:index]
+	var newQuery string
+	newQuery = strings.Join(newPieces, "where ")
+	query = newQuery
+	// }
+
 	return query
 }

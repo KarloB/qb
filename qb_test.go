@@ -4,18 +4,14 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 )
 
 func TestQueryBuilder(t *testing.T) {
 
-	query := "select u.id, u.name, u.email, u.registered, u.active_from from user u join photo p on (p.user_id = u.id)"
+	query := "select u.id, u.name, u.email, u.registered, u.active_from from user u join photo p on (a+b where id in select a + b where c = 4) where id = ?"
 
 	request := []Definition{
-		{"John", "u.name", Like},
-		{1, "u.id", Equals},
-		{"", "u.email", Equals},
-		{time.Now(), "u.registered", Lesser},
+		{[]string{"John", "Milkovocih"}, "u.name", Or},
 	}
 
 	result, args := QueryBuilder(query, request)

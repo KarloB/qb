@@ -111,13 +111,12 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 						}
 					}
 				}
-
 			default:
 				requestArgs = append(requestArgs, p.Value)
 			}
 
-			op := buildOperator(p.Operator, counter)
-			tableArgs = append(tableArgs, tableArg{value: p.Column, operator: op})
+			column, op := buildOperator(p.Column, p.Operator, counter)
+			tableArgs = append(tableArgs, tableArg{value: column, operator: op})
 		}
 	}
 
@@ -133,5 +132,6 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 		query = fmt.Sprintf("%s %s", query, strings.Join(buildArgs, " "))
 	}
 
+	query = removeDoubleSpace(query)
 	return query, requestArgs
 }
