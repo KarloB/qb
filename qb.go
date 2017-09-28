@@ -51,17 +51,6 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 		var counter int
 		res := isZero(p.Value)
 		if !res {
-
-			switch p.Value.(type) {
-			case string:
-				h, ok := p.Value.(string)
-				if ok {
-					if p.Operator == Like {
-						p.Value = fmt.Sprintf("%%%s%%", h)
-					}
-				}
-			}
-
 			switch p.Operator {
 			case In:
 				switch p.Value.(type) {

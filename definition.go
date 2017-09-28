@@ -37,6 +37,7 @@ const (
 	Between
 	Greater
 	Lesser
+	// support string, []string and []int
 	In
 	// Or operator for slice of string or slice of int
 	Or

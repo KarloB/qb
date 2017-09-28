@@ -197,15 +197,12 @@ func buildOperator(column string, operator Operator, counter int) (string, strin
 		}
 		op = fmt.Sprintf("in (%s)", strings.Join(newOperator, ","))
 	case Like:
-		if counter > 1 {
-			var ors []string
-			for i := 0; i < counter; i++ {
-				ors[i] = "(?)"
-			}
-			newOperator := "like " + strings.Join(ors, " or ")
-			op = newOperator
+		ors := make([]string, counter)
+		for i := 0; i < counter; i++ {
+			ors[i] = "(?)"
 		}
-
+		newOperator := "like " + strings.Join(ors, " or ")
+		op = newOperator
 	case Or:
 		if counter == 1 {
 			return column, "= ?"
