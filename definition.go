@@ -1,6 +1,11 @@
 package qb
 
-const mysqlMaxPlaceholders = 65536
+import "fmt"
+
+const (
+	mysqlMaxPlaceholders = 65536
+	defaultPlaceholder   = "?"
+)
 
 type e int
 
@@ -22,9 +27,10 @@ var errors = map[e]string{
 
 // Definition define value, column name and statement type for table columns
 type Definition struct {
-	Value    interface{}
-	Column   string
-	Operator Operator
+	Value       interface{}
+	Column      string
+	Operator    Operator
+	Placeholder string
 }
 
 // ColStatement define which sql statement will each column use
@@ -63,6 +69,32 @@ func (t Operator) String() string {
 		return ""
 	default:
 		return "= ?"
+	}
+}
+
+func (t Operator) WithPlaceholder(placeholder string) string {
+	if len(placeholder) == 0 {
+		placeholder = defaultPlaceholder
+	}
+	switch t {
+	case Equals:
+		return fmt.Sprintf("= %s", placeholder)
+	case NotEquals:
+		return fmt.Sprintf("!= %s", placeholder)
+	case Like:
+		return fmt.Sprintf("like %s", placeholder)
+	case Between:
+		return "between"
+	case Greater:
+		return fmt.Sprintf(">= %s", placeholder)
+	case Lesser:
+		return fmt.Sprintf("<= %s", placeholder)
+	case In:
+		return fmt.Sprintf("in (%s)", placeholder)
+	case Or:
+		return ""
+	default:
+		return fmt.Sprintf("= %s", placeholder)
 	}
 }
 

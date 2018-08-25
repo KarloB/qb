@@ -16,7 +16,7 @@ func TestQueryBuilder(t *testing.T) {
 	query := "select u.id, u.name, u.email, u.registered, u.active_from from user u"
 
 	request := []Definition{
-		{[]string{"John", "Milkovocih", "Pimpek"}, "u.name", In},
+		{Value: []string{"John", "Milkovocih", "Pimpek"}, Column: "u.name", Operator: In},
 	}
 
 	result, args := QueryBuilder(query, request)
@@ -130,6 +130,31 @@ func TestCreateStatement(t *testing.T) {
 	fmt.Println(statement)
 	fmt.Println(args)
 }
+
+func TestQueryBuilderWithPlaceholder(t *testing.T) {
+
+	query := "select u.id, u.name, u.email, u.registered, u.active_from from user u"
+
+	request := []Definition{
+		{Value: []string{"John", "Milkovocih", "Pimpek"}, Column: "u.name", Operator: In, Placeholder: "uuid_to_bin(?,true)"},
+	}
+
+	result, args := QueryBuilder(query, request)
+
+	fmt.Println(result)
+	fmt.Println(args)
+
+	request = []Definition{
+		{Value: "John", Column: "u.name", Operator: Equals, Placeholder: "uuid_to_bin(?,true)"},
+		{Value: "john@mil.com", Column: "u.email", Operator: Equals, Placeholder: "uuid_to_bin(?,true)"},
+		{Value: "reg", Column: "u.registered", Operator: Equals},
+	}
+	result, args = QueryBuilder(query, request)
+
+	fmt.Println(result)
+	fmt.Println(args)
+}
+
 func escape(query string) string {
 	chars := []string{`(`, `)`, `$`, `+`, `?`, `.`}
 	for _, r := range chars {
