@@ -116,7 +116,7 @@ func QueryBuilder(query string, definition []Definition) (string, []interface{})
 				requestArgs = append(requestArgs, p.Value)
 			}
 
-			column, op := buildOperator(p.Column, p.Operator, counter)
+			column, op := buildOperator(p.Column, p.Operator, counter, p.Placeholder)
 			tableArgs = append(tableArgs, tableArg{value: column, operator: op})
 		}
 	}

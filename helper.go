@@ -124,6 +124,7 @@ func createPlaceholder(query string, a interface{}) (string, int, error) {
 
 	instance := reflect.TypeOf(a)
 	fCount := instance.NumField()
+	customPlaceholders := customPlaceholders(instance)
 
 	columns := extractQueryColumns(query)
 	if len(columns) != fCount {
@@ -132,7 +133,12 @@ func createPlaceholder(query string, a interface{}) (string, int, error) {
 
 	ph := make([]string, fCount)
 	for i := 0; i < fCount; i++ {
-		ph[i] = "?"
+
+		if i < len(customPlaceholders) && len(customPlaceholders[i]) > 0 {
+			ph[i] = customPlaceholders[i]
+		} else {
+			ph[i] = "?"
+		}
 	}
 
 	placeholder := fmt.Sprintf("(%s)", strings.Join(ph, ","))
@@ -185,33 +191,53 @@ func cleanSlice(a []string) []string {
 }
 
 // buildOperator "in"" operator can have multiple argumens as value
-func buildOperator(column string, operator Operator, counter int) (string, string) {
+func buildOperator(column string, operator Operator, counter int, placeholder string) (string, string) {
 	var op string
 	switch operator {
 	default:
-		op = operator.String()
+		if len(placeholder) > 0 {
+			op = operator.WithPlaceholder(placeholder)
+		} else {
+			op = operator.String()
+		}
 	case In:
 		var newOperator []string
 		for i := 1; i <= counter; i++ {
-			newOperator = append(newOperator, "?")
+			if len(placeholder) > 0 {
+				newOperator = append(newOperator, placeholder)
+			} else {
+				newOperator = append(newOperator, "?")
+			}
 		}
 		op = fmt.Sprintf("in (%s)", strings.Join(newOperator, ","))
 	case Like:
 		ors := make([]string, counter)
 		for i := 0; i < counter; i++ {
-			ors[i] = "(?)"
+			if len(placeholder) > 0 {
+				ors[i] = fmt.Sprintf("(%s)", placeholder)
+			} else {
+				ors[i] = "(?)"
+			}
 		}
 		newOperator := "like " + strings.Join(ors, " or ")
 		op = newOperator
 	case Or:
 		if counter == 1 {
-			return column, "= ?"
+			if len(placeholder) > 0 {
+				return column, Equals.WithPlaceholder(placeholder)
+			} else {
+				return column, Equals.String()
+			}
 		}
 		if counter > 1 {
-
 			var ors []string
 			for i := 0; i < counter; i++ {
-				ors = append(ors, fmt.Sprintf("%s = ?", column))
+				if len(placeholder) > 0 {
+					ors = append(ors, fmt.Sprintf("%s %s", column, Equals.WithPlaceholder(placeholder)))
+				} else {
+					// %s = ?
+					ors = append(ors, fmt.Sprintf("%s %s?", column, Equals.String()))
+				}
 			}
 			newOperator := fmt.Sprintf("(%s)", strings.Join(ors, " or "))
 			op = newOperator
@@ -242,4 +268,23 @@ func cleanQueryString(query string) string {
 	query = newQuery
 
 	return query
+}
+
+// customPlaceholders fetches placeholders from tags if they exist.
+// Format for tag is `qb:"placeholder:cstm(?)"` so cstm(?) will be used instead of regular ?
+func customPlaceholders(instance reflect.Type) []string {
+	fCount := instance.NumField()
+	placeholders := make([]string, fCount)
+	for i := 0; i < fCount; i++ {
+		if tag, ok := instance.Field(i).Tag.Lookup("qb"); ok {
+			tag = strings.TrimSpace(tag)
+			if strings.HasPrefix(tag, "placeholder") {
+				split := strings.Split(tag, ":")
+				if len(split) >= 2 {
+					placeholders[i] = split[1]
+				}
+			}
+		}
+	}
+	return placeholders
 }
